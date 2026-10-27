@@ -1,0 +1,178 @@
+{
+  "variants": {
+    "facing=north,mirrored=false,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=north,mirrored=false,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top"
+    },
+    "facing=north,mirrored=false,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top"
+    },
+    "facing=north,mirrored=false,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle"
+    },
+    "facing=north,mirrored=false,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom"
+    },
+    "facing=north,mirrored=false,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom"
+    },
+    "facing=north,mirrored=true,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=north,mirrored=true,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top_mirrored"
+    },
+    "facing=north,mirrored=true,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top_mirrored"
+    },
+    "facing=north,mirrored=true,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle_mirrored"
+    },
+    "facing=north,mirrored=true,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom_mirrored"
+    },
+    "facing=north,mirrored=true,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom_mirrored"
+    },
+    "facing=east,mirrored=false,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=east,mirrored=false,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top",
+      "y": 90
+    },
+    "facing=east,mirrored=false,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top",
+      "y": 90
+    },
+    "facing=east,mirrored=false,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle",
+      "y": 90
+    },
+    "facing=east,mirrored=false,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom",
+      "y": 90
+    },
+    "facing=east,mirrored=false,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom",
+      "y": 90
+    },
+    "facing=east,mirrored=true,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=east,mirrored=true,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top_mirrored",
+      "y": 90
+    },
+    "facing=east,mirrored=true,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top_mirrored",
+      "y": 90
+    },
+    "facing=east,mirrored=true,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle_mirrored",
+      "y": 90
+    },
+    "facing=east,mirrored=true,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom_mirrored",
+      "y": 90
+    },
+    "facing=east,mirrored=true,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom_mirrored",
+      "y": 90
+    },
+    "facing=south,mirrored=false,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=south,mirrored=false,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top",
+      "y": 180
+    },
+    "facing=south,mirrored=false,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top",
+      "y": 180
+    },
+    "facing=south,mirrored=false,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle",
+      "y": 180
+    },
+    "facing=south,mirrored=false,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom",
+      "y": 180
+    },
+    "facing=south,mirrored=false,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom",
+      "y": 180
+    },
+    "facing=south,mirrored=true,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=south,mirrored=true,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top_mirrored",
+      "y": 180
+    },
+    "facing=south,mirrored=true,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top_mirrored",
+      "y": 180
+    },
+    "facing=south,mirrored=true,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle_mirrored",
+      "y": 180
+    },
+    "facing=south,mirrored=true,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom_mirrored",
+      "y": 180
+    },
+    "facing=south,mirrored=true,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom_mirrored",
+      "y": 180
+    },
+    "facing=west,mirrored=false,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=west,mirrored=false,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top",
+      "y": 270
+    },
+    "facing=west,mirrored=false,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top",
+      "y": 270
+    },
+    "facing=west,mirrored=false,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle",
+      "y": 270
+    },
+    "facing=west,mirrored=false,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom",
+      "y": 270
+    },
+    "facing=west,mirrored=false,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom",
+      "y": 270
+    },
+    "facing=west,mirrored=true,part=none": {
+      "model": "vendingmachine:block/vending_machine_casing"
+    },
+    "facing=west,mirrored=true,part=poster_top": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_top_mirrored",
+      "y": 270
+    },
+    "facing=west,mirrored=true,part=panel_top": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_top_mirrored",
+      "y": 270
+    },
+    "facing=west,mirrored=true,part=poster_middle": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_middle_mirrored",
+      "y": 270
+    },
+    "facing=west,mirrored=true,part=poster_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_poster_bottom_mirrored",
+      "y": 270
+    },
+    "facing=west,mirrored=true,part=panel_bottom": {
+      "model": "vendingmachine:block/vending_machine_casing_panel_bottom_mirrored",
+      "y": 270
+    }
+  }
+}

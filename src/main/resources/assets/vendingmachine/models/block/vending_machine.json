@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "vendingmachine:block/vending_machine_casing",
+    "side": "vendingmachine:block/vending_machine_casing",
+    "front": "vendingmachine:block/vending_machine_front_on",
+    "glow": "vendingmachine:block/vending_machine_front_on_glow"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "down":  { "texture": "#side", "cullface": "down" },
+        "up":    { "texture": "#side", "cullface": "up" },
+        "north": { "texture": "#front", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west":  { "texture": "#side", "cullface": "west" },
+        "east":  { "texture": "#side", "cullface": "east" }
+      }
+    },
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "shade": false,
+      "forge_data": { "block_light": 15, "sky_light": 15 },
+      "faces": {
+        "north": { "texture": "#glow", "cullface": "north" }
+      }
+    }
+  ]
+}

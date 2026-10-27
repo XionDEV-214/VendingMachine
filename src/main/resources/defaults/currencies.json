@@ -1,0 +1,21 @@
+{
+  "currencies": [
+    {
+      "id": "emerald",
+      "name": "vendingmachine.currency.emerald",
+      "tiers": [
+        { "value": 1, "match": "minecraft:emerald" },
+        { "value": 9, "match": "minecraft:emerald_block" }
+      ]
+    },
+    {
+      "id": "gold",
+      "name": "vendingmachine.currency.gold",
+      "tiers": [
+        { "value": 1, "match": "minecraft:gold_nugget" },
+        { "value": 9, "match": "#forge:ingots/gold", "output": "minecraft:gold_ingot" },
+        { "value": 81, "match": "#forge:storage_blocks/gold", "output": "minecraft:gold_block" }
+      ]
+    }
+  ]
+}

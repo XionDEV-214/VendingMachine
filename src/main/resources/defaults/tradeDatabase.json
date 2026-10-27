@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "tradeGroups": [
+    {
+      "id": "6f1d3c1e-2b8a-4c55-9a51-0f0a9e3c2d10",
+      "category": "raw",
+      "cooldown": -1,
+      "maxTrades": -1,
+      "trades": [
+        {
+          "fromCurrency": [ { "type": "emerald", "value": 5 } ],
+          "toItems": [ { "item": "minecraft:diamond", "count": 1 } ]
+        }
+      ]
+    },
+    {
+      "id": "1c9e7a52-7f3d-4a8e-b0c4-5d2e8f61a7b3",
+      "category": "misc",
+      "cooldown": 300,
+      "maxTrades": -1,
+      "trades": [
+        {
+          "fromCurrency": [ { "type": "gold", "value": 20 } ],
+          "fromItems": [ { "tag": "minecraft:logs", "count": 16 } ],
+          "toItems": [ { "item": "minecraft:golden_apple", "count": 1 } ]
+        }
+      ]
+    }
+  ]
+}
