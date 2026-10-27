@@ -23,7 +23,6 @@ import com.eisiadev.vendingmachine.trade.TradeCategory;
 import com.eisiadev.vendingmachine.trade.TradeDatabase;
 import com.eisiadev.vendingmachine.trade.TradeGroup;
 
-import brachy.modularui.api.GuiAxis;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.ModularPanel;
@@ -32,6 +31,7 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.value.StringValue;
 import brachy.modularui.widget.ParentWidget;
+import brachy.modularui.widget.scroll.HorizontalScrollData;
 import brachy.modularui.widgets.ListWidget;
 import brachy.modularui.widgets.PagedWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
@@ -71,6 +71,7 @@ public final class VendingClientUI {
     private static final int COIN_Y = LED_Y + LED_H + 3;
     private static final int COIN_ROWS = 5;
     private static final int COIN_H = COIN_ROWS * CoinEntry.H + 4;
+    private static final int COIN_SCROLLBAR = 3;
 
     private static final int SIDE_W = 54;
     private static final int SIDE_H = 218;
@@ -206,8 +207,9 @@ public final class VendingClientUI {
 
     private static IWidget coinStrip(VendingView view) {
         ListWidget<IWidget, ?> coins = new ListWidget<>();
-        coins.scrollDirection(GuiAxis.X);
-        coins.pos(SHELF_X + 3, COIN_Y + 2).size(SHELF_W - 6, COIN_H - 4);
+        // The list reaches below the well so its scrollbar runs just under it, not across the coins.
+        coins.scrollDirection(new HorizontalScrollData(false, COIN_SCROLLBAR));
+        coins.pos(SHELF_X + 3, COIN_Y + 2).size(SHELF_W - 6, COIN_H - 2 + COIN_SCROLLBAR);
         coins.setEnabledIf(w -> VMConfig.SHOW_COINS.get());
 
         Flow column = null;
@@ -220,10 +222,6 @@ public final class VendingClientUI {
             column.child(new CoinEntry(view, def));
             n++;
         }
-        coins.child(new IconKey(view, () -> VMTextures.COIN_RETURN, () -> view.ejectCoins(null))
-            .accent(Gfx.AMBER)
-            .tooltipDynamic(t -> t.clearText().addLine(Component.translatable("vendingmachine.gui.coin_eject")))
-            .size(16));
         return coins;
     }
 

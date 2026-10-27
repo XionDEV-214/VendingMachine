@@ -66,7 +66,7 @@
   "vendingmachine.gui.wallet_hidden": "Wallet hidden (config: showCoins)",
   "vendingmachine.gui.tab.empty": "No favourites yet (Ctrl-Click a trade)",
   "vendingmachine.gui.led.none": "Hover a trade",
-  "vendingmachine.gui.led.qty": "QTY",
+  "vendingmachine.gui.led.quantity": "Quantity",
   "vendingmachine.gui.led.max": "MAX",
   "vendingmachine.gui.status.ready": "READY",
   "vendingmachine.gui.status.short": "SHORT",

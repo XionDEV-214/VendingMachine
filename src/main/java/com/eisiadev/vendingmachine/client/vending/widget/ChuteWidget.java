@@ -46,7 +46,8 @@ public class ChuteWidget extends VendingWidget<ChuteWidget> implements Interacta
         if (t0 == 0) return 0;
         float t = (now - t0) / (float) FALL_MS;
         if (t >= 1) return 0;
-        float distance = slotY(i) + 18 - LIP_H + 4;
+        // Start with the item's top edge inside the lip, so nothing pokes out above the chute while falling.
+        float distance = slotY(i) - 1;
         return -distance * (1 - Gfx.bounceOut(t));
     }
 

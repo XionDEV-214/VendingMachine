@@ -71,6 +71,7 @@ public class CategoryTab extends VendingWidget<CategoryTab> implements Interacta
         }
 
         int iconX = x0 + (w - 3 - x0 - 20) / 2 + 2;
+        g.flush(); // rects are batched; flush so they don't end up painted over the icon
         icon.draw(context, iconX, (h - 16) / 2, 20, 16);
         if (empty()) Gfx.rect(g, x0 + 1, 1, w - x0 - 1, h - 2, 0x99101418);
 

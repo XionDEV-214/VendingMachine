@@ -41,9 +41,9 @@ public class VendingGui {
     public static final String ACTION_COLLECT = "collect_outputs";
 
     public static final int WIDTH = 178;
-    public static final int HEIGHT = 322;
+    public static final int HEIGHT = 326;
     public static final int INVENTORY_X = 8;
-    public static final int INVENTORY_Y = 241;
+    public static final int INVENTORY_Y = 245;
 
     private static boolean openOnClient = false;
 

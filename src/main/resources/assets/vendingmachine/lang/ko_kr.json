@@ -66,7 +66,7 @@
   "vendingmachine.gui.wallet_hidden": "지갑 숨김 (설정: showCoins)",
   "vendingmachine.gui.tab.empty": "즐겨찾기가 없습니다 (거래를 Ctrl-클릭)",
   "vendingmachine.gui.led.none": "거래에 마우스를 올리세요",
-  "vendingmachine.gui.led.qty": "수량",
+  "vendingmachine.gui.led.quantity": "수량",
   "vendingmachine.gui.led.max": "최대",
   "vendingmachine.gui.status.ready": "준비",
   "vendingmachine.gui.status.short": "부족",

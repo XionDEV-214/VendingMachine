@@ -17,7 +17,7 @@ import java.util.Locale;
  */
 public class PurchaseDisplay extends VendingWidget<PurchaseDisplay> {
 
-    public static final int FIELD_X = 66;
+    public static final int FIELD_X = 74;
     public static final int FIELD_Y = 11;
     public static final int FIELD_W = 40;
     public static final int FIELD_H = 10;
@@ -43,10 +43,10 @@ public class PurchaseDisplay extends VendingWidget<PurchaseDisplay> {
         TradeDisplay d = view.hovered();
         String name = d == null ? Component.translatable("vendingmachine.gui.led.none").getString()
             : d.display.getHoverName().getString();
-        Gfx.text(g, Gfx.fit(name, 104 - TEXT_LEFT - 4, 0.5f), TEXT_LEFT, 4, 0.5f, Gfx.LED_LABEL, false);
+        Gfx.text(g, Gfx.fit(name, FIELD_X + FIELD_W - TEXT_LEFT - 4, 0.5f), TEXT_LEFT, 4, 0.5f, Gfx.LED_LABEL, false);
 
-        Gfx.text(g, Component.translatable("vendingmachine.gui.led.qty").getString(), TEXT_LEFT, FIELD_Y + 3, 0.5f,
-            Gfx.LED_LABEL, false);
+        String quantity = Component.translatable("vendingmachine.gui.led.quantity").getString();
+        Gfx.text(g, Gfx.fit(quantity, FIELD_X - TEXT_LEFT - 2, 0.5f), TEXT_LEFT, FIELD_Y + 3, 0.5f, Gfx.LED_LABEL, false);
         Gfx.text(g, Component.translatable("vendingmachine.gui.led.max").getString(), FIELD_X + FIELD_W + 4, 4,
             0.5f, Gfx.LED_LABEL, false);
 
