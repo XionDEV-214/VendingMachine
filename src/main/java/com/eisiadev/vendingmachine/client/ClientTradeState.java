@@ -52,6 +52,7 @@ public final class ClientTradeState {
             d.hasCooldown = d.cooldown > 0 && d.cdTradeCount >= tradesPerCooldown;
             d.enabled = e.enabled();
             d.tradeableNow = e.tradeableNow();
+            d.maxQuantity = e.maxQuantity();
             d.isFavourite = FavouritesTracker.isFavourite(d.tgID, d.tradeGroupOrder);
             trades.add(d);
         }

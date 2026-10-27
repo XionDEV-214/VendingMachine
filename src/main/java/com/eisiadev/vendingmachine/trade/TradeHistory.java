@@ -19,13 +19,25 @@ public class TradeHistory {
     }
 
     public void executeTrade(int maxTrades, int cooldown) {
+        executeTrade(maxTrades, cooldown, 1);
+    }
+
+    /**
+     * Records {@code times} executions of a trade at once (bulk purchase).
+     */
+    public void executeTrade(int maxTrades, int cooldown, int times) {
+        if (times <= 0) return;
         long now = System.currentTimeMillis();
         boolean hasCooldown = cooldown != -1;
         boolean cooldownOver = (now - lastTrade) / 1000 >= cooldown;
         lastTrade = now;
-        tradeCount += 1;
-        cooldownTradeCount = cooldownOver ? 1 : cooldownTradeCount + 1;
+        tradeCount = saturatedIntAdd(tradeCount, times);
+        cooldownTradeCount = cooldownOver ? times : saturatedIntAdd(cooldownTradeCount, times);
         notificationQueued = hasCooldown && (maxTrades == -1 || tradeCount < maxTrades);
+    }
+
+    private static int saturatedIntAdd(int a, int b) {
+        return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, (long) a + b));
     }
 
     public void setNotified() {

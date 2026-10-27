@@ -74,6 +74,8 @@ public class VendingMachineController extends MultiblockControllerMachine
 
     public static final int INPUT_SLOTS = 8;
     public static final int OUTPUT_SLOTS = 100;
+    /** Upper bound for a single bulk purchase (6 digits). */
+    public static final int MAX_PURCHASE_QUANTITY = 999_999;
 
     private static final int BASE_DISPENSE_DELAY = 10;
     private static final String DATA_KEY = "vendingmachine";
@@ -93,7 +95,11 @@ public class VendingMachineController extends MultiblockControllerMachine
         }
     };
 
-    private final Deque<ItemStack> outputBuffer = new ArrayDeque<>();
+    /**
+     * Items waiting to drop into the output chute. Each entry is an item template plus a (possibly huge)
+     * total count, so a 999,999x purchase doesn't allocate hundreds of thousands of ItemStacks.
+     */
+    private final Deque<PendingOutput> outputBuffer = new ArrayDeque<>();
     private final Queue<TradeRequest> pendingTrades = new ConcurrentLinkedQueue<>();
 
     @Nullable
@@ -201,7 +207,15 @@ public class VendingMachineController extends MultiblockControllerMachine
         clearInventory(outputItems);
         Level level = getLevel();
         if (level != null) {
-            for (ItemStack stack : outputBuffer) Block.popResource(level, getPos(), stack);
+            for (PendingOutput out : outputBuffer) {
+                long remaining = out.remaining;
+                int max = out.maxStackSize();
+                while (remaining > 0) {
+                    int size = (int) Math.min(remaining, max);
+                    Block.popResource(level, getPos(), out.template.copyWithCount(size));
+                    remaining -= size;
+                }
+            }
         }
         outputBuffer.clear();
     }
@@ -322,7 +336,7 @@ public class VendingMachineController extends MultiblockControllerMachine
         Wallet wallet = TradeManager.getWallet(player.getUUID());
         if (wallet == null) return;
         List<ItemStack> coins = new ArrayList<>();
-        int room = Math.max(0, OUTPUT_SLOTS - outputBuffer.size());
+        int room = (int) Math.max(0, OUTPUT_SLOTS - bufferedStackCount());
         for (CurrencyDefinition def : CurrencyRegistry.server().all()) {
             if (room <= 0) break;
             if (currencyId != null && !currencyId.equals(def.getId())) continue;
@@ -364,38 +378,86 @@ public class VendingMachineController extends MultiblockControllerMachine
     }
 
     public void queueTrade(ServerPlayer player, UUID tradeGroup, int order) {
-        pendingTrades.add(new TradeRequest(player, tradeGroup, order));
+        queueTrade(player, tradeGroup, order, 1);
     }
 
+    public void queueTrade(ServerPlayer player, UUID tradeGroup, int order, int quantity) {
+        pendingTrades.add(new TradeRequest(player, tradeGroup, order, clampQuantity(quantity)));
+    }
+
+    public static int clampQuantity(long quantity) {
+        return (int) Math.max(1, Math.min(MAX_PURCHASE_QUANTITY, quantity));
+    }
+
+    /**
+     * Executes a trade {@code quantity} times at once. All-or-nothing: if the player can't afford the
+     * full quantity (or it exceeds the trade limit / cooldown budget) nothing is bought.
+     */
     private void processTrade(TradeRequest request) {
-        UUID playerId = request.player().getUUID();
+        ServerPlayer player = request.player();
+        UUID playerId = player.getUUID();
         TradeGroup tg = TradeDatabase.server().getTradeGroup(request.tradeGroup());
         if (tg == null || request.order() < 0 || request.order() >= tg.getTrades().size()) return;
-        if (!TradeManager.canExecuteTrade(playerId, tg)) return;
+        int quantity = clampQuantity(request.quantity());
+        if (!TradeManager.canExecuteTrade(playerId, tg) ||
+            quantity > TradeManager.getRemainingExecutions(playerId, tg)) {
+            rejectPurchase(player, quantity);
+            return;
+        }
         Trade trade = tg.getTrades().get(request.order());
-        if (!checkTrade(trade, playerId, false)) return;
+        if (!checkTrade(trade, playerId, quantity, false)) {
+            rejectPurchase(player, quantity);
+            return;
+        }
 
-        for (ItemIngredient out : trade.toItems) dispense(out.createStacks());
-        TradeManager.executeTrade(playerId, tg);
+        for (ItemIngredient out : trade.toItems) {
+            ItemStack base = out.getDisplayStack();
+            // createStacks() treats a count of 0 as 1, keep that behaviour per unit
+            long perUnit = Math.max(1, out.getCount());
+            long total = Wallet.checkedMultiply(perUnit, quantity);
+            enqueueOutput(base, total < 0 ? Long.MAX_VALUE : total);
+        }
+        newBufferedOutputs = true;
+        TradeManager.executeTrade(playerId, tg, quantity);
         syncTrades = true;
         markDirty();
     }
 
+    private void rejectPurchase(ServerPlayer player, int quantity) {
+        syncTrades = true;
+        if (quantity > 1) {
+            player.displayClientMessage(
+                Component.translatable("vendingmachine.gui.error.bulk_purchase_failed", quantity), true);
+        }
+    }
+
     public boolean checkTrade(Trade trade, UUID player, boolean simulate) {
+        return checkTrade(trade, player, 1, simulate);
+    }
+
+    /**
+     * Checks (and, if {@code simulate} is false, pays for) {@code quantity} executions of a trade.
+     * Currency and consumed items are multiplied by the quantity; non-consumed items only need to be present once.
+     */
+    public boolean checkTrade(Trade trade, UUID player, int quantity, boolean simulate) {
+        if (quantity < 1) return false;
+        List<CurrencyAmount> price = scalePrice(trade.fromCurrency, quantity);
+        if (price == null) return false;
+
         ItemStack[] slots = new ItemStack[INPUT_SLOTS];
         for (int i = 0; i < INPUT_SLOTS; i++) slots[i] = inputItems.getStackInSlot(i).copy();
 
-        List<ItemIngredient> missingNc = removeItems(slots, trade.nonConsumedItems, true);
-        List<ItemIngredient> missing = removeItems(slots, trade.fromItems, false);
+        List<ItemIngredient> missingNc = removeItems(slots, trade.nonConsumedItems, 1, true);
+        List<ItemIngredient> missing = removeItems(slots, trade.fromItems, quantity, false);
 
         Wallet wallet = TradeManager.getWallet(player);
         List<CurrencyAmount> unpaid;
         Wallet after = null;
         if (wallet == null) {
-            unpaid = trade.fromCurrency;
+            unpaid = price;
         } else {
             after = Wallet.copyOf(wallet);
-            unpaid = after.pay(trade.fromCurrency);
+            unpaid = after.pay(price);
         }
 
         boolean success = missingNc.isEmpty() && missing.isEmpty() && unpaid.stream().allMatch(c -> c.value() <= 0);
@@ -410,11 +472,65 @@ public class VendingMachineController extends MultiblockControllerMachine
         return success;
     }
 
+    /** Multiplies every price by {@code quantity}; returns null if any total overflows a long. */
+    @Nullable
+    private static List<CurrencyAmount> scalePrice(List<CurrencyAmount> price, int quantity) {
+        if (quantity == 1) return price;
+        List<CurrencyAmount> scaled = new ArrayList<>(price.size());
+        for (CurrencyAmount ca : price) {
+            long total = Wallet.checkedMultiply(ca.value(), quantity);
+            if (total < 0) return null;
+            scaled.add(new CurrencyAmount(ca.type(), total));
+        }
+        return scaled;
+    }
+
+    /**
+     * Largest quantity (1..{@link #MAX_PURCHASE_QUANTITY}) of this trade the player could buy right now,
+     * or 0 if none. Uses cheap upper bounds from the wallet/inputs, then binary-searches with
+     * {@link #checkTrade} so shared tags, duplicate currencies etc. are handled exactly.
+     */
+    public int getMaxPurchasable(Trade trade, TradeGroup tg, UUID player) {
+        if (!isFormed()) return 0;
+        long cap = Math.min(MAX_PURCHASE_QUANTITY, TradeManager.getRemainingExecutions(player, tg));
+        if (cap < 1) return 0;
+
+        Wallet wallet = TradeManager.getWallet(player);
+        for (CurrencyAmount ca : trade.fromCurrency) {
+            if (ca.value() <= 0) continue;
+            long have = wallet == null ? 0 : wallet.get(ca.type());
+            cap = Math.min(cap, have / ca.value());
+        }
+        for (ItemIngredient ing : trade.fromItems) {
+            if (ing.getCount() <= 0) continue;
+            long have = 0;
+            for (int i = 0; i < INPUT_SLOTS; i++) {
+                ItemStack s = inputItems.getStackInSlot(i);
+                if (!s.isEmpty() && ing.matches(s)) have += s.getCount();
+            }
+            cap = Math.min(cap, have / ing.getCount());
+        }
+        if (cap < 1 || !checkTrade(trade, player, 1, true)) return 0;
+
+        int lo = 1;
+        int hi = (int) cap;
+        while (lo < hi) {
+            int mid = lo + (hi - lo + 1) / 2;
+            if (checkTrade(trade, player, mid, true)) lo = mid;
+            else hi = mid - 1;
+        }
+        return lo;
+    }
+
     private static List<ItemIngredient> removeItems(ItemStack[] slots, List<ItemIngredient> required,
-                                                    boolean simulate) {
+                                                    int quantity, boolean simulate) {
         List<ItemIngredient> missing = new ArrayList<>();
         for (ItemIngredient ing : required) {
-            long need = ing.getCount();
+            long need = Wallet.checkedMultiply(ing.getCount(), quantity);
+            if (need < 0) {
+                missing.add(ing);
+                continue;
+            }
             for (int i = slots.length - 1; i >= 0 && need > 0; i--) {
                 ItemStack s = slots[i];
                 if (s.isEmpty() || !ing.matches(s)) continue;
@@ -439,8 +555,11 @@ public class VendingMachineController extends MultiblockControllerMachine
             boolean enabled = TradeManager.isEnabled(id, tg);
             int cdCount = TradeManager.getHistory(id, tg).cooldownTradeCount;
             for (int i = 0; i < tg.getTrades().size(); i++) {
-                boolean tradeable = formed && checkTrade(tg.getTrades().get(i), id, true);
-                entries.add(new TradeStatusPacket.Entry(tg.getId(), i, cooldown, enabled, tradeable, cdCount));
+                Trade trade = tg.getTrades().get(i);
+                boolean tradeable = formed && checkTrade(trade, id, true);
+                int maxQuantity = tradeable ? getMaxPurchasable(trade, tg, id) : 0;
+                entries.add(new TradeStatusPacket.Entry(tg.getId(), i, cooldown, enabled, tradeable, cdCount,
+                    maxQuantity));
             }
         }
         VMNetwork.sendTo(player, new TradeStatusPacket(entries, TradeManager.getTradesPerCooldown()));
@@ -448,26 +567,54 @@ public class VendingMachineController extends MultiblockControllerMachine
 
     public void dispense(List<ItemStack> stacks) {
         for (ItemStack s : stacks) {
-            if (!s.isEmpty()) outputBuffer.add(s.copy());
+            if (!s.isEmpty()) enqueueOutput(s, s.getCount());
         }
         newBufferedOutputs = true;
         markDirty();
     }
 
+    /** Queues {@code count} items like {@code stack}, merging with the last queued entry when possible. */
+    private void enqueueOutput(ItemStack stack, long count) {
+        if (stack.isEmpty() || count <= 0) return;
+        PendingOutput last = outputBuffer.peekLast();
+        if (last != null && ItemStack.isSameItemSameTags(last.template, stack)) {
+            last.remaining = Wallet.saturatedAdd(last.remaining, count);
+        } else {
+            outputBuffer.add(new PendingOutput(stack.copyWithCount(1), count));
+        }
+    }
+
+    /** Number of output-slot-sized stacks still waiting in the buffer. */
+    private long bufferedStackCount() {
+        long stacks = 0;
+        for (PendingOutput out : outputBuffer) {
+            int max = out.maxStackSize();
+            stacks = Wallet.saturatedAdd(stacks, out.remaining / max + (out.remaining % max == 0 ? 0 : 1));
+        }
+        return stacks;
+    }
+
     private int getDispenseDelay() {
-        double acceleration = Math.log(outputBuffer.size());
+        double acceleration = Math.log(bufferedStackCount());
         if (acceleration < 1) return BASE_DISPENSE_DELAY;
         return Math.max(1, (int) (BASE_DISPENSE_DELAY / acceleration));
     }
 
     private void dispenseNext() {
-        ItemStack next = outputBuffer.peek();
+        PendingOutput next = outputBuffer.peek();
         if (next == null) return;
+        if (next.remaining <= 0) {
+            outputBuffer.poll();
+            return;
+        }
         for (int i = 0; i < OUTPUT_SLOTS; i++) {
             if (outputItems.getStackInSlot(i).isEmpty()) {
-                outputItems.setStackInSlot(i, next.copy());
-                outputBuffer.poll();
-                boolean isCoin = CurrencyRegistry.server().match(next) != null;
+                int size = (int) Math.min(next.remaining, next.maxStackSize());
+                ItemStack stack = next.template.copyWithCount(size);
+                outputItems.setStackInSlot(i, stack);
+                next.remaining -= size;
+                if (next.remaining <= 0) outputBuffer.poll();
+                boolean isCoin = CurrencyRegistry.server().match(stack) != null;
                 playSound(isCoin ? VMSounds.COIN_DROP.get() : VMSounds.ITEM_DROP.get());
                 markDirty();
                 return;
@@ -490,9 +637,15 @@ public class VendingMachineController extends MultiblockControllerMachine
         CompoundTag data = new CompoundTag();
         data.put("inputs", inputItems.serializeNBT());
         data.put("outputs", outputItems.serializeNBT());
-        ListTag buffer = new ListTag();
-        for (ItemStack s : outputBuffer) buffer.add(s.save(new CompoundTag()));
-        data.put("outputBuffer", buffer);
+        ListTag queue = new ListTag();
+        for (PendingOutput out : outputBuffer) {
+            if (out.remaining <= 0) continue;
+            CompoundTag entry = new CompoundTag();
+            entry.put("item", out.template.save(new CompoundTag()));
+            entry.putLong("count", out.remaining);
+            queue.add(entry);
+        }
+        data.put("outputQueue", queue);
         tag.put(DATA_KEY, data);
     }
 
@@ -504,10 +657,17 @@ public class VendingMachineController extends MultiblockControllerMachine
         if (tag.contains("inputs")) loadHandler(inputItems, tag.getCompound("inputs"));
         if (tag.contains("outputs")) loadHandler(outputItems, tag.getCompound("outputs"));
         outputBuffer.clear();
-        ListTag buffer = tag.getList("outputBuffer", Tag.TAG_COMPOUND);
-        for (int i = 0; i < buffer.size(); i++) {
-            ItemStack s = ItemStack.of(buffer.getCompound(i));
-            if (!s.isEmpty()) outputBuffer.add(s);
+        // legacy format: one ItemStack per entry
+        ListTag legacy = tag.getList("outputBuffer", Tag.TAG_COMPOUND);
+        for (int i = 0; i < legacy.size(); i++) {
+            ItemStack s = ItemStack.of(legacy.getCompound(i));
+            if (!s.isEmpty()) enqueueOutput(s, s.getCount());
+        }
+        ListTag queue = tag.getList("outputQueue", Tag.TAG_COMPOUND);
+        for (int i = 0; i < queue.size(); i++) {
+            CompoundTag entry = queue.getCompound(i);
+            ItemStack template = ItemStack.of(entry.getCompound("item"));
+            enqueueOutput(template, entry.getLong("count"));
         }
     }
 
@@ -519,9 +679,24 @@ public class VendingMachineController extends MultiblockControllerMachine
             ItemStack s = tmp.getStackInSlot(i);
             if (s.isEmpty()) continue;
             if (i < handler.getSlots()) handler.setStackInSlot(i, s);
-            else outputBuffer.add(s);
+            else enqueueOutput(s, s.getCount());
         }
     }
 
-    public record TradeRequest(ServerPlayer player, UUID tradeGroup, int order) {}
+    public record TradeRequest(ServerPlayer player, UUID tradeGroup, int order, int quantity) {}
+
+    private static final class PendingOutput {
+
+        final ItemStack template;
+        long remaining;
+
+        PendingOutput(ItemStack template, long remaining) {
+            this.template = template;
+            this.remaining = remaining;
+        }
+
+        int maxStackSize() {
+            return Math.max(1, template.getMaxStackSize());
+        }
+    }
 }

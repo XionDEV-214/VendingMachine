@@ -75,11 +75,32 @@ public final class TradeManager {
         return tg != null && isEnabled(player, tg) && !isBlockedByCooldown(player, tg);
     }
 
+    /**
+     * How many more times this trade group can be executed right now, considering
+     * {@code maxTrades} and the per-cooldown trade budget. {@link Long#MAX_VALUE} means unlimited.
+     */
+    public static long getRemainingExecutions(UUID player, TradeGroup tg) {
+        long remaining = Long.MAX_VALUE;
+        TradeHistory h = getHistory(player, tg);
+        if (tg.maxTrades != -1) {
+            remaining = Math.min(remaining, Math.max(0L, (long) tg.maxTrades - h.tradeCount));
+        }
+        if (tg.hasCooldown()) {
+            int used = getCooldownRemaining(player, tg) > 0 ? h.cooldownTradeCount : 0;
+            remaining = Math.min(remaining, Math.max(0L, (long) getTradesPerCooldown() - used));
+        }
+        return remaining;
+    }
+
     public static void executeTrade(UUID player, TradeGroup tg) {
+        executeTrade(player, tg, 1);
+    }
+
+    public static void executeTrade(UUID player, TradeGroup tg, int times) {
         PlayerVendingData d = getPlayerData(player);
         if (d == null) return;
         TradeHistory h = d.getHistory(tg.getId());
-        h.executeTrade(tg.maxTrades, tg.cooldown);
+        h.executeTrade(tg.maxTrades, tg.cooldown, times);
         d.setHistory(tg.getId(), h);
         if (h.notificationQueued) d.notificationQueue.add(tg.getId());
         markDirty();
