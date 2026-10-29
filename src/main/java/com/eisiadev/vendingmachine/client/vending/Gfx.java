@@ -6,13 +6,8 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 
-/**
- * Procedural drawing for the vending machine's industrial look (same palette and primitives as The Avarice wallet):
- * riveted plates, recessed wells, hazard stripes, LEDs. Everything here is plain coloured quads.
- */
 public final class Gfx {
 
-    // Frame and plates
     public static final int FRAME = 0xFF07090C;
     public static final int PLATE_TOP = 0xFF3B424B;
     public static final int PLATE_BOTTOM = 0xFF282D34;
@@ -20,23 +15,19 @@ public final class Gfx {
     public static final int BEVEL_LO = 0xFF14181C;
     public static final int SEAM = 0xFF1C2026;
 
-    // Recessed wells
     public static final int WELL = 0xFF0E1115;
     public static final int WELL_SHADOW = 0xFF050608;
     public static final int WELL_HI = 0xFF48515B;
 
-    // Text
     public static final int TEXT = 0xFFD7DEE6;
     public static final int MUTED = 0xFF808B97;
     public static final int DIM = 0xFF4A525B;
 
-    // Accents
     public static final int CYAN = 0xFF38E1FF;
     public static final int AMBER = 0xFFFFB21A;
     public static final int RED = 0xFFFF4A3D;
     public static final int HAZARD_DARK = 0xFF16181B;
 
-    // LED
     public static final int LED_BG = 0xFF040904;
     public static final int LED_ON = 0xFF52FF2E;
     public static final int LED_GHOST = 0xFF0C220A;
@@ -63,7 +54,6 @@ public final class Gfx {
         GuiDraw.drawHorizontalGradientRect(g, x, y, w, h, left, right);
     }
 
-    /** 1px outline drawn inside the given box. */
     public static void outline(GuiGraphics g, float x, float y, float w, float h, int color) {
         rect(g, x, y, w, 1, color);
         rect(g, x, y + h - 1, w, 1, color);
@@ -71,7 +61,6 @@ public final class Gfx {
         rect(g, x + w - 1, y + 1, 1, h - 2, color);
     }
 
-    /** Soft glow around a box, fading outwards. */
     public static void glow(GuiGraphics g, float x, float y, float w, float h, int rgb, int strength) {
         for (int i = 1; i <= 3; i++) {
             int alpha = Mth.clamp(strength / (i * i), 0, 255);
@@ -79,7 +68,6 @@ public final class Gfx {
         }
     }
 
-    /** Raised metal plate: dark frame, gradient body, light top-left bevel, dark bottom-right bevel. */
     public static void plate(GuiGraphics g, float x, float y, float w, float h) {
         rect(g, x, y, w, h, FRAME);
         vgrad(g, x + 1, y + 1, w - 2, h - 2, PLATE_TOP, PLATE_BOTTOM);
@@ -89,7 +77,6 @@ public final class Gfx {
         rect(g, x + w - 2, y + 2, 1, h - 4, BEVEL_LO);
     }
 
-    /** Recessed well with an inner shadow on top-left and a highlight on bottom-right. */
     public static void well(GuiGraphics g, float x, float y, float w, float h) {
         rect(g, x, y, w, h, WELL);
         rect(g, x, y, w, 1, WELL_SHADOW);
@@ -99,7 +86,6 @@ public final class Gfx {
         rect(g, x + w - 1, y, 1, h, WELL_HI);
     }
 
-    /** A 2x2 rivet. */
     public static void rivet(GuiGraphics g, float x, float y) {
         rect(g, x, y, 2, 2, 0xFF1A1E23);
         rect(g, x, y, 1, 1, 0xFF7C8793);
@@ -113,7 +99,6 @@ public final class Gfx {
         rivet(g, x + w - inset - 2, y + h - inset - 2);
     }
 
-    /** Diagonal warning stripes. {@code phase} shifts the stripes sideways (pass a time value to animate). */
     public static void hazard(GuiGraphics g, float x, float y, int w, int h, int stripe, int dark, int phase) {
         rect(g, x, y, w, h, dark);
         int period = 6;
@@ -127,12 +112,10 @@ public final class Gfx {
         }
     }
 
-    /** Horizontal scanlines, for screens. */
     public static void scanlines(GuiGraphics g, float x, float y, float w, float h, int color) {
         for (int row = 1; row < h; row += 2) rect(g, x, y + row, w, 1, color);
     }
 
-    /** Small filled triangle pointing left or right, centered in the box. */
     public static void arrow(GuiGraphics g, float cx, float cy, boolean left, int size, int color) {
         for (int i = 0; i < size; i++) {
             float len = 2 * i + 1;
@@ -141,7 +124,6 @@ public final class Gfx {
         }
     }
 
-    /** Small filled triangle pointing up or down. */
     public static void arrowVertical(GuiGraphics g, float cx, float cy, boolean up, int size, int color) {
         for (int i = 0; i < size; i++) {
             float len = 2 * i + 1;
@@ -166,7 +148,6 @@ public final class Gfx {
         return font().width(s);
     }
 
-    /** Cuts {@code s} so it fits in {@code maxWidth} at {@code scale}, adding an ellipsis when it was cut. */
     public static String fit(String s, float maxWidth, float scale) {
         int limit = (int) (maxWidth / scale);
         if (width(s) <= limit) return s;
@@ -195,7 +176,6 @@ public final class Gfx {
         return (color & 0xFF000000) | (r << 16) | (gr << 8) | b;
     }
 
-    /** 0..1 pulse with the given period, for blinking lamps. */
     public static float pulse(long now, int periodMs) {
         float t = (now % periodMs) / (float) periodMs;
         return 0.5f - 0.5f * Mth.cos(t * Mth.TWO_PI);

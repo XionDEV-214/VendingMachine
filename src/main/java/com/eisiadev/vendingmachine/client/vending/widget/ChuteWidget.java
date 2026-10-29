@@ -12,10 +12,6 @@ import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Output chute. The output slots (real slots, drawn on top of this widget) land on its floor, spread sideways by
- * the golden ratio; new items fall in from under the lip with a bounce. Shift-click the chute to collect all.
- */
 public class ChuteWidget extends VendingWidget<ChuteWidget> implements Interactable {
 
     public static final int W = 42;
@@ -40,13 +36,12 @@ public class ChuteWidget extends VendingWidget<ChuteWidget> implements Interacta
         return H - 2 - 18;
     }
 
-    /** Vertical offset of an item that has just landed in slot {@code i} (negative while falling). */
     public float dropOffset(int i, long now) {
         long t0 = view.outputDropTime(i);
         if (t0 == 0) return 0;
         float t = (now - t0) / (float) FALL_MS;
         if (t >= 1) return 0;
-        // Start with the item's top edge inside the lip, so nothing pokes out above the chute while falling.
+
         float distance = slotY(i) - 1;
         return -distance * (1 - Gfx.bounceOut(t));
     }
@@ -61,7 +56,7 @@ public class ChuteWidget extends VendingWidget<ChuteWidget> implements Interacta
 
     @Override
     protected void render(ModularGuiContext context, GuiGraphics g, int w, int h, long now) {
-        // Recess and back wall
+
         Gfx.rect(g, 0, 0, w, h, Gfx.FRAME);
         Gfx.vgrad(g, 1, 1, w - 2, h - 2, 0xFF07090B, 0xFF1B2026);
         for (int x = 5; x < w - 2; x += 6) Gfx.rect(g, x, LIP_H, 1, h - LIP_H - 4, 0x14FFFFFF);
@@ -69,7 +64,6 @@ public class ChuteWidget extends VendingWidget<ChuteWidget> implements Interacta
         if (isHovering()) Gfx.outline(g, 0, 0, w, h, Gfx.AMBER);
     }
 
-    /** The chute's front lip, drawn after the output slots so falling items pass behind it. */
     public static void drawLip(GuiGraphics g, int w, long now) {
         g.pose().pushPose();
         g.pose().translate(0, 0, 400);

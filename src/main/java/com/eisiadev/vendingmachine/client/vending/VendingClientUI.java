@@ -47,7 +47,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 
-/** Client half of the vending machine UI: every widget that is drawn. Layout constants are in panel coordinates. */
 public final class VendingClientUI {
 
     private static final int W = VendingGui.WIDTH;
@@ -70,8 +69,15 @@ public final class VendingClientUI {
 
     private static final int COIN_Y = LED_Y + LED_H + 3;
     private static final int COIN_ROWS = 5;
-    private static final int COIN_H = COIN_ROWS * CoinEntry.H + 4;
+
+    private static final int COIN_PAD = 3;
+    private static final int COIN_ROWS_H = COIN_ROWS * CoinEntry.H;
     private static final int COIN_SCROLLBAR = 3;
+    private static final int COIN_RAIL_Y = COIN_PAD + COIN_ROWS_H + 3;
+    private static final int COIN_LIST_H = COIN_RAIL_Y + COIN_SCROLLBAR - COIN_PAD;
+    private static final int COIN_H = COIN_RAIL_Y + COIN_SCROLLBAR + 2;
+
+    private static final int COIN_LIFT = 4;
 
     private static final int SIDE_W = 54;
     private static final int SIDE_H = 218;
@@ -83,21 +89,17 @@ public final class VendingClientUI {
 
     private VendingClientUI() {}
 
-    /** Builds everything that is drawn; returns what to run when the screen closes. */
     public static Runnable build(ModularPanel<?> panel, VendingGui gui) {
         VendingView view = new VendingView(gui);
         view.open();
         gui.sync().onClientTick(view::tick);
 
-        // The panel itself draws nothing: category tabs go first, then the body covers their inner edge, so tabs
-        // always look like they are behind the machine.
         panel.disableThemeBackground(true);
         for (int i = 0; i < view.categories().size(); i++) {
             panel.child(new CategoryTab(view, i).pos(-CategoryTab.W + 2, SHELF_Y + i * (CategoryTab.H + 2)));
         }
         panel.child(new Decor(view, (g, w, h, now) -> body(g, w, h)).pos(0, 0).size(W, H));
 
-        // Title strip with the search field set into it
         panel.child(new Decor(view, (g, w, h, now) -> titleStrip(g, w, h, now, view)).pos(4, 4).size(W - 8, TITLE_H));
         panel.child(searchField(view));
 
@@ -111,7 +113,6 @@ public final class VendingClientUI {
         panel.child(new Decor(view, (g, w, h, now) -> coinWell(g, w, h)).pos(SHELF_X, COIN_Y).size(SHELF_W, COIN_H));
         panel.child(coinStrip(view));
 
-        // Inventory
         panel.child(new Decor(view, (g, w, h, now) -> {
             Gfx.rect(g, 0, 0, w, 1, Gfx.SEAM);
             Gfx.rect(g, 0, 1, w, 1, 0xFF4A535D);
@@ -124,8 +125,6 @@ public final class VendingClientUI {
         panel.child(sidePanel(view));
         return view::close;
     }
-
-    // ---------- Search ----------
 
     private static IWidget searchField(VendingView view) {
         TextFieldWidget field = new TextFieldWidget();
@@ -144,8 +143,6 @@ public final class VendingClientUI {
         Gfx.well(g, x, y, w, h);
         Gfx.rect(g, x + 1, y + 1, w - 2, h - 2, 0xFF0B0E11);
     };
-
-    // ---------- Shelf: one scrolling page per category tab ----------
 
     private static IWidget shelf(VendingView view) {
         PagedWidget<?> paged = new PagedWidget<>().controller(view.tabs());
@@ -203,20 +200,18 @@ public final class VendingClientUI {
         return row;
     }
 
-    // ---------- Wallet strip ----------
-
     private static IWidget coinStrip(VendingView view) {
         ListWidget<IWidget, ?> coins = new ListWidget<>();
-        // The list reaches below the well so its scrollbar runs just under it, not across the coins.
+
         coins.scrollDirection(new HorizontalScrollData(false, COIN_SCROLLBAR));
-        coins.pos(SHELF_X + 3, COIN_Y + 2).size(SHELF_W - 6, COIN_H - 2 + COIN_SCROLLBAR);
+        coins.pos(SHELF_X + 3, COIN_Y + COIN_PAD - COIN_LIFT).size(SHELF_W - 6, COIN_LIST_H + COIN_LIFT);
         coins.setEnabledIf(w -> VMConfig.SHOW_COINS.get());
 
         Flow column = null;
         int n = 0;
         for (CurrencyDefinition def : CurrencyRegistry.client().all()) {
             if (n % COIN_ROWS == 0) {
-                column = Flow.col().width(CoinEntry.W).height(COIN_H - 4);
+                column = Flow.col().width(CoinEntry.W).height(COIN_ROWS_H);
                 coins.child(column);
             }
             column.child(new CoinEntry(view, def));
@@ -224,8 +219,6 @@ public final class VendingClientUI {
         }
         return coins;
     }
-
-    // ---------- Side cabinet: input, output chute, options ----------
 
     private static ParentWidget<?> sidePanel(VendingView view) {
         SidePanel side = new SidePanel();
@@ -253,7 +246,7 @@ public final class VendingClientUI {
         side.child(chute.pos(CHUTE_X, CHUTE_Y));
         for (int i = 0; i < VendingMachineController.OUTPUT_SLOTS; i++) {
             int slot = i;
-            // No hover square under items in the chute: they are loose items, not slots.
+
             ItemSlot item = style(new ItemSlot() {
 
                 @Override
@@ -265,7 +258,7 @@ public final class VendingClientUI {
             item.background(IDrawable.EMPTY);
             item.setEnabledIf(s -> item.isSynced() && item.getSlot().hasItem());
             item.pos(CHUTE_X + ChuteWidget.slotX(i), CHUTE_Y + ChuteWidget.slotY(i));
-            // TransformWidget delegates its area to the slot; it only adds the falling offset.
+
             side.child(new TransformWidget(item)
                 .transform(stack -> stack.translate(0, chute.dropOffset(slot, Util.getMillis()), slot * 0.5f)));
         }
@@ -329,7 +322,6 @@ public final class VendingClientUI {
         return key;
     }
 
-    /** Fixed side cabinet bolted to the right of the panel. */
     private static final class SidePanel extends ParentWidget<SidePanel> {
 
         @Override
@@ -345,8 +337,6 @@ public final class VendingClientUI {
             }
         }
     }
-
-    // ---------- Painters ----------
 
     private static final IDrawable WELL = (context, x, y, w, h, theme) -> Gfx.well(context.getGraphics(), x, y, w, h);
 
@@ -379,13 +369,15 @@ public final class VendingClientUI {
 
     private static void coinWell(GuiGraphics g, int w, int h) {
         Gfx.well(g, 0, 0, w, h);
-        if (!VMConfig.SHOW_COINS.get()) {
+        if (VMConfig.SHOW_COINS.get()) {
+            Gfx.rect(g, 2, COIN_RAIL_Y - 1, w - 4, 1, Gfx.SEAM);
+            Gfx.rect(g, 3, COIN_RAIL_Y, w - 6, COIN_SCROLLBAR, 0xFF07090B);
+        } else {
             Gfx.textCentered(g, Component.translatable("vendingmachine.gui.wallet_hidden").getString(), w / 2f,
                 h / 2f - 2, 0.5f, Gfx.DIM, false);
         }
     }
 
-    /** Hazard banner shown at the top of the shelf while the multiblock is not formed. */
     private static void offline(GuiGraphics g, int w, int h, long now) {
         Gfx.hazard(g, 0, 0, w, h, 0xFF4A1410, 0xFF15100F, (int) (now / 200));
         Gfx.outline(g, 0, 0, w, h, Gfx.RED);
@@ -403,7 +395,6 @@ public final class VendingClientUI {
         Gfx.rect(g, x + 1, y + 1, w - 2, h - 2, 0xFF181D22);
     };
 
-    /** Dark recessed slot, with the item tooltip workaround. */
     private static ItemSlot style(ItemSlot slot) {
         slot.disableThemeBackground(true);
         slot.background(SLOT_BACKGROUND);

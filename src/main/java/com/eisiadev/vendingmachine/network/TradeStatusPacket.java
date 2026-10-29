@@ -14,10 +14,6 @@ import java.util.function.Supplier;
 
 public class TradeStatusPacket {
 
-    /**
-     * @param maxQuantity how many units of this trade the player can buy in one purchase right now
-     *                    (wallet, input items, trade limits and cooldown budget all considered; 0 = none)
-     */
     public record Entry(UUID tradeGroup, int order, long cooldownRemaining, boolean enabled, boolean tradeableNow,
                         int cdTradeCount, int maxQuantity) {}
 

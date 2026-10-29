@@ -40,9 +40,9 @@ public final class VMConfig {
             .defineInRange("tradesPerCooldown", 1, 1, 1000);
         b.pop();
         b.push("developer");
-        DATA_DIR = b.comment("Directory (relative to the game directory) holding currencies.json and tradeDatabase.json.")
+        DATA_DIR = b.comment("Directory (relative to the game directory) holding currencies.json and the tradeDatabase folder.")
             .define("dataDir", "config/vendingmachine");
-        FORCE_REWRITE_DATABASE = b.comment("Rewrite tradeDatabase.json on load even if nothing was generated (normalises formatting).")
+        FORCE_REWRITE_DATABASE = b.comment("Rewrite every file in the tradeDatabase folder on load even if nothing was generated (normalises formatting).")
             .define("forceRewriteDatabase", false);
         b.pop();
         COMMON_SPEC = b.build();

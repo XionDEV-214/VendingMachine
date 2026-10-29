@@ -45,15 +45,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Client-side model of one open vending screen: which trades are shown per category tab, the search text, the
- * purchase quantity, the hovered trade, and the actions the widgets trigger (buy, favourite, eject, collect).
- */
 public final class VendingView {
 
     public enum Status { READY, SHORT, BLOCKED, OFFLINE }
 
-    // Remembered for the session, like the wallet's tabs.
     private static String lastSearch = "";
     private static int lastPage = 1;
     private static String lastQuantity = "";
@@ -85,8 +80,6 @@ public final class VendingView {
             if (c != TradeCategory.FAVOURITES && c != TradeCategory.ALL) categories.add(c);
         }
     }
-
-    // ---------- Structure ----------
 
     public List<TradeCategory> categories() {
         return categories;
@@ -133,8 +126,6 @@ public final class VendingView {
         return gui.machine().isFormed();
     }
 
-    // ---------- Search ----------
-
     public String search() {
         return search;
     }
@@ -147,9 +138,6 @@ public final class VendingView {
         forceRefresh = true;
     }
 
-    // ---------- Quantity ----------
-
-    /** Exactly what the player typed (digits only, at most 6, enforced by the field). Empty means 1. */
     public String quantityText() {
         return quantityText;
     }
@@ -174,7 +162,6 @@ public final class VendingView {
         return VendingMachineController.clampQuantity(value);
     }
 
-    /** Whether the trade can be bought right now in the selected quantity. */
     public boolean canBuy(TradeDisplay d) {
         return d.tradeableNow && d.maxQuantity >= quantity;
     }
@@ -182,8 +169,6 @@ public final class VendingView {
     public boolean blocked(TradeDisplay d) {
         return !formed() || d.hasCooldown || !d.enabled;
     }
-
-    // ---------- Hover ----------
 
     @Nullable
     public TradeDisplay hovered() {
@@ -202,14 +187,10 @@ public final class VendingView {
         return canBuy(hovered) ? Status.READY : Status.SHORT;
     }
 
-    // ---------- Wallet ----------
-
     public long balance(CurrencyDefinition def) {
         LongSyncValue value = gui.sync().findSyncHandler(VendingGui.SYNC_WALLET + def.getId(), LongSyncValue.class);
         return value == null ? 0 : value.getLongValue();
     }
-
-    // ---------- Actions ----------
 
     public void attemptPurchase(TradeDisplay d) {
         if (!d.tradeableNow || blocked(d)) {
@@ -224,7 +205,7 @@ public final class VendingView {
             return;
         }
         d.cdTradeCount += qty;
-        d.maxQuantity -= qty; // optimistic, corrected by the next status sync
+        d.maxQuantity -= qty;
         gui.sync().callSyncedAction(VendingGui.ACTION_TRADE, buf -> {
             buf.writeUUID(d.tgID);
             buf.writeVarInt(d.tradeGroupOrder);
@@ -243,7 +224,6 @@ public final class VendingView {
         gui.sync().callSyncedAction(VendingGui.ACTION_EJECT_ITEMS);
     }
 
-    /** {@code currency} null = every currency in the wallet. */
     public void ejectCoins(@Nullable CurrencyDefinition currency) {
         gui.sync().callSyncedAction(VendingGui.ACTION_EJECT_COINS,
             buf -> buf.writeUtf(currency == null ? "" : currency.getId()));
@@ -261,8 +241,6 @@ public final class VendingView {
         sound(SoundEvents.DISPENSER_FAIL, 1.6F, 0.4F);
     }
 
-    // ---------- Lifecycle ----------
-
     public void open() {
         VendingMusic.start();
     }
@@ -279,7 +257,7 @@ public final class VendingView {
                 if (pageToRestore < categories.size()) tabs.setPage(pageToRestore);
                 pageToRestore = -1;
             }
-            // Favourites emptied while open: fall back to "all".
+
             int active = tabs.getActivePageIndex();
             if (active >= 0 && active < categories.size() && categories.get(active) == TradeCategory.FAVOURITES &&
                 list(TradeCategory.FAVOURITES).isEmpty()) {
@@ -346,8 +324,6 @@ public final class VendingView {
         if (d.tradeableNow) return d.hasCooldown ? 2 : 1;
         return d.hasCooldown ? 4 : 3;
     }
-
-    // ---------- Tooltip ----------
 
     public void buildTradeTooltip(RichTooltip t, TradeDisplay d) {
         int qty = quantity;
@@ -418,18 +394,14 @@ public final class VendingView {
         return line.withStyle(ChatFormatting.DARK_GREEN);
     }
 
-    // ---------- Formatting ----------
-
     public static String full(long value) {
         return String.format(Locale.ROOT, "%,d", value);
     }
 
-    /** {@code value × qty} with thousands separators, without overflow. */
     public static String times(long value, int qty) {
         return String.format(Locale.ROOT, "%,d", BigInteger.valueOf(value).multiply(BigInteger.valueOf(qty)));
     }
 
-    /** 999 / 12.3K / 4.56M ... */
     public static String compact(long value) {
         if (value < 10_000) return Long.toString(value);
         String[] units = { "K", "M", "B", "T", "Q" };
@@ -443,8 +415,6 @@ public final class VendingView {
             v >= 10 ? String.format(Locale.ROOT, "%.1f", v) : String.format(Locale.ROOT, "%.2f", v);
         return number + units[u];
     }
-
-    // ---------- Sounds ----------
 
     public static void click(float pitch) {
         sound(SoundEvents.UI_BUTTON_CLICK.value(), pitch, 0.25F);

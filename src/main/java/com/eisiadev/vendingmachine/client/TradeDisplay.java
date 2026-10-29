@@ -23,7 +23,7 @@ public class TradeDisplay {
     public boolean enabled;
     public boolean tradeableNow;
     public int cdTradeCount;
-    /** Max units purchasable in one go right now (server-computed). */
+
     public int maxQuantity;
     public boolean isFavourite;
 

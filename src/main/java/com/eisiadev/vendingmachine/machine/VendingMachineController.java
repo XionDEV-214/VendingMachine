@@ -74,7 +74,7 @@ public class VendingMachineController extends MultiblockControllerMachine
 
     public static final int INPUT_SLOTS = 8;
     public static final int OUTPUT_SLOTS = 100;
-    /** Upper bound for a single bulk purchase (6 digits). */
+
     public static final int MAX_PURCHASE_QUANTITY = 999_999;
 
     private static final int BASE_DISPENSE_DELAY = 10;
@@ -95,10 +95,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         }
     };
 
-    /**
-     * Items waiting to drop into the output chute. Each entry is an item template plus a (possibly huge)
-     * total count, so a 999,999x purchase doesn't allocate hundreds of thousands of ItemStacks.
-     */
     private final Deque<PendingOutput> outputBuffer = new ArrayDeque<>();
     private final Queue<TradeRequest> pendingTrades = new ConcurrentLinkedQueue<>();
 
@@ -389,10 +385,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         return (int) Math.max(1, Math.min(MAX_PURCHASE_QUANTITY, quantity));
     }
 
-    /**
-     * Executes a trade {@code quantity} times at once. All-or-nothing: if the player can't afford the
-     * full quantity (or it exceeds the trade limit / cooldown budget) nothing is bought.
-     */
     private void processTrade(TradeRequest request) {
         ServerPlayer player = request.player();
         UUID playerId = player.getUUID();
@@ -412,7 +404,7 @@ public class VendingMachineController extends MultiblockControllerMachine
 
         for (ItemIngredient out : trade.toItems) {
             ItemStack base = out.getDisplayStack();
-            // createStacks() treats a count of 0 as 1, keep that behaviour per unit
+
             long perUnit = Math.max(1, out.getCount());
             long total = Wallet.checkedMultiply(perUnit, quantity);
             enqueueOutput(base, total < 0 ? Long.MAX_VALUE : total);
@@ -435,10 +427,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         return checkTrade(trade, player, 1, simulate);
     }
 
-    /**
-     * Checks (and, if {@code simulate} is false, pays for) {@code quantity} executions of a trade.
-     * Currency and consumed items are multiplied by the quantity; non-consumed items only need to be present once.
-     */
     public boolean checkTrade(Trade trade, UUID player, int quantity, boolean simulate) {
         if (quantity < 1) return false;
         List<CurrencyAmount> price = scalePrice(trade.fromCurrency, quantity);
@@ -472,7 +460,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         return success;
     }
 
-    /** Multiplies every price by {@code quantity}; returns null if any total overflows a long. */
     @Nullable
     private static List<CurrencyAmount> scalePrice(List<CurrencyAmount> price, int quantity) {
         if (quantity == 1) return price;
@@ -485,11 +472,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         return scaled;
     }
 
-    /**
-     * Largest quantity (1..{@link #MAX_PURCHASE_QUANTITY}) of this trade the player could buy right now,
-     * or 0 if none. Uses cheap upper bounds from the wallet/inputs, then binary-searches with
-     * {@link #checkTrade} so shared tags, duplicate currencies etc. are handled exactly.
-     */
     public int getMaxPurchasable(Trade trade, TradeGroup tg, UUID player) {
         if (!isFormed()) return 0;
         long cap = Math.min(MAX_PURCHASE_QUANTITY, TradeManager.getRemainingExecutions(player, tg));
@@ -573,7 +555,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         markDirty();
     }
 
-    /** Queues {@code count} items like {@code stack}, merging with the last queued entry when possible. */
     private void enqueueOutput(ItemStack stack, long count) {
         if (stack.isEmpty() || count <= 0) return;
         PendingOutput last = outputBuffer.peekLast();
@@ -584,7 +565,6 @@ public class VendingMachineController extends MultiblockControllerMachine
         }
     }
 
-    /** Number of output-slot-sized stacks still waiting in the buffer. */
     private long bufferedStackCount() {
         long stacks = 0;
         for (PendingOutput out : outputBuffer) {
@@ -657,7 +637,7 @@ public class VendingMachineController extends MultiblockControllerMachine
         if (tag.contains("inputs")) loadHandler(inputItems, tag.getCompound("inputs"));
         if (tag.contains("outputs")) loadHandler(outputItems, tag.getCompound("outputs"));
         outputBuffer.clear();
-        // legacy format: one ItemStack per entry
+
         ListTag legacy = tag.getList("outputBuffer", Tag.TAG_COMPOUND);
         for (int i = 0; i < legacy.size(); i++) {
             ItemStack s = ItemStack.of(legacy.getCompound(i));

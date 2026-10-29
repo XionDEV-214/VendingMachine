@@ -75,10 +75,6 @@ public final class TradeManager {
         return tg != null && isEnabled(player, tg) && !isBlockedByCooldown(player, tg);
     }
 
-    /**
-     * How many more times this trade group can be executed right now, considering
-     * {@code maxTrades} and the per-cooldown trade budget. {@link Long#MAX_VALUE} means unlimited.
-     */
     public static long getRemainingExecutions(UUID player, TradeGroup tg) {
         long remaining = Long.MAX_VALUE;
         TradeHistory h = getHistory(player, tg);

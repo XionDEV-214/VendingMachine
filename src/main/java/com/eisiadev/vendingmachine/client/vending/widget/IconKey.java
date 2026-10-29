@@ -14,10 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
-/**
- * A small raised metal key showing an icon, with a coloured accent line along the bottom:
- * eject keys, music / display / sort switches. Optionally reacts to the mouse wheel.
- */
 public class IconKey extends VendingWidget<IconKey> implements Interactable {
 
     private final Supplier<UITexture> icon;
@@ -38,7 +34,6 @@ public class IconKey extends VendingWidget<IconKey> implements Interactable {
         return this;
     }
 
-    /** Icon edge length; 0 = fill the key minus its frame. */
     public IconKey iconSize(int size) {
         this.iconSize = size;
         return this;
@@ -87,7 +82,7 @@ public class IconKey extends VendingWidget<IconKey> implements Interactable {
 
         int size = iconSize > 0 ? iconSize : Math.min(w, h) - 4;
         int dy = pressed ? 1 : 0;
-        g.flush(); // rects are batched; flush so they don't end up painted over the icon
+        g.flush();
         icon.get().draw(context, (w - size) / 2, (h - 1 - size) / 2 + dy, size, size);
     }
 }

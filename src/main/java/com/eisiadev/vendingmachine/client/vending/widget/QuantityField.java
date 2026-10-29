@@ -14,10 +14,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.regex.Pattern;
 
-/**
- * Purchase quantity input on the LED display. Digits only, at most 6 (1..999,999); empty means 1.
- * The field itself enforces the pattern and length, so typed text is never rewritten under the cursor.
- */
 public class QuantityField extends TextFieldWidget {
 
     private static final Pattern DIGITS = Pattern.compile("[0-9]*");

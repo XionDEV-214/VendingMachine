@@ -6,7 +6,6 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 
 import net.minecraft.client.gui.GuiGraphics;
 
-/** A non-interactive widget that just runs a drawing function: labels, banners, seams. */
 public class Decor extends VendingWidget<Decor> {
 
     @FunctionalInterface

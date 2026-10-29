@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ public final class TradeDatabase {
 
     public int version = 1;
     private final Map<UUID, TradeGroup> tradeGroups = new LinkedHashMap<>();
+    private final Map<UUID, String> origins = new HashMap<>();
     private final Map<TradeCategory, List<UUID>> byCategory = new EnumMap<>(TradeCategory.class);
 
     public static TradeDatabase get(boolean client) {
@@ -40,6 +42,7 @@ public final class TradeDatabase {
 
     public void clear() {
         tradeGroups.clear();
+        origins.clear();
         byCategory.clear();
     }
 
@@ -65,26 +68,43 @@ public final class TradeDatabase {
     public boolean readJson(JsonObject root) {
         clear();
         version = root.has("version") ? root.get("version").getAsInt() : 1;
+        boolean generated = addJson(root, "sync");
+        logSummary();
+        return generated;
+    }
+
+    public boolean addJson(JsonObject root, String source) {
+        if (root.has("version")) version = Math.max(version, root.get("version").getAsInt());
         int generated = 0;
         JsonArray arr = root.has("tradeGroups") ? root.getAsJsonArray("tradeGroups") : new JsonArray();
         for (JsonElement e : arr) {
             TradeGroup tg = new TradeGroup();
             try {
-                if (tg.readJson(e.getAsJsonObject())) generated++;
+                JsonObject obj = e.getAsJsonObject();
+                if (tg.readJson(obj)) {
+                    generated++;
+                    if (!obj.has("id")) obj.addProperty("id", tg.getId().toString());
+                    if (!obj.has("category")) obj.addProperty("category", tg.getCategory().getKey());
+                }
             } catch (RuntimeException ex) {
-                VendingMachine.LOG.error("Skipping invalid trade group: {}", ex.getMessage());
+                VendingMachine.LOG.error("Skipping invalid trade group in {}: {}", source, ex.getMessage());
                 continue;
             }
             if (tradeGroups.containsKey(tg.getId())) {
-                VendingMachine.LOG.error("Multiple trade groups with id {} exist in the file!", tg.getId());
+                VendingMachine.LOG.error("Trade group id {} in {} is already defined in {}; skipping it.",
+                    tg.getId(), source, origins.get(tg.getId()));
                 continue;
             }
             tradeGroups.put(tg.getId(), tg);
+            origins.put(tg.getId(), source);
             byCategory.computeIfAbsent(tg.getCategory(), k -> new ArrayList<>()).add(tg.getId());
         }
-        if (generated > 0) VendingMachine.LOG.info("Generated metadata for {} new trade groups", generated);
-        VendingMachine.LOG.info("Loaded {} trade groups containing {} trades.", tradeGroups.size(), getTradeCount());
+        if (generated > 0) VendingMachine.LOG.info("Generated metadata for {} new trade groups in {}", generated, source);
         return generated > 0;
+    }
+
+    public void logSummary() {
+        VendingMachine.LOG.info("Loaded {} trade groups containing {} trades.", tradeGroups.size(), getTradeCount());
     }
 
     public JsonObject toJson() {

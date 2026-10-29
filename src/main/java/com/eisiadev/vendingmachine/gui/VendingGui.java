@@ -25,10 +25,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.UUID;
 
-/**
- * Builds the vending machine panel on both sides. The server side only needs the sync handlers, slots, actions
- * and the player inventory; everything that is drawn is built by {@link VendingClientUI} on the client.
- */
 public class VendingGui {
 
     public static final String PANEL_NAME = "vending_machine";
@@ -41,9 +37,9 @@ public class VendingGui {
     public static final String ACTION_COLLECT = "collect_outputs";
 
     public static final int WIDTH = 178;
-    public static final int HEIGHT = 326;
+    public static final int HEIGHT = 330;
     public static final int INVENTORY_X = 8;
-    public static final int INVENTORY_Y = 245;
+    public static final int INVENTORY_Y = 249;
 
     private static boolean openOnClient = false;
 
@@ -52,7 +48,6 @@ public class VendingGui {
     private final PanelSyncManager syncManager;
     private final boolean client;
 
-    /** When each output slot last received a new item (client only), for the chute's drop animation. */
     private final long[] outputDropTime = new long[VendingMachineController.OUTPUT_SLOTS];
     private Runnable onClientClose = () -> {};
 
@@ -91,8 +86,6 @@ public class VendingGui {
         Player player = data.getPlayer();
         syncManager.bindPlayerInventory(player);
 
-        // Input slots (coins and trade ingredients) and the output chute, registered by key on both sides so the
-        // client can draw them however it likes.
         syncManager.registerSlotGroup(SLOT_INPUT, 2, true);
         syncManager.registerSlotGroup(SLOT_OUTPUT, 2, false);
         for (int i = 0; i < VendingMachineController.INPUT_SLOTS; i++) {
@@ -139,8 +132,6 @@ public class VendingGui {
             }
         });
     }
-
-    // ---------- Accessors for the client UI ----------
 
     public VendingMachineController machine() {
         return machine;

@@ -22,9 +22,6 @@ public class TradeHistory {
         executeTrade(maxTrades, cooldown, 1);
     }
 
-    /**
-     * Records {@code times} executions of a trade at once (bulk purchase).
-     */
     public void executeTrade(int maxTrades, int cooldown, int times) {
         if (times <= 0) return;
         long now = System.currentTimeMillis();

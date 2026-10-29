@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.NotNull;
 
-/** One currency in the wallet strip: coin icon and LED balance. Shift-click ejects that currency. */
 public class CoinEntry extends VendingWidget<CoinEntry> implements Interactable {
 
     public static final int W = 40;

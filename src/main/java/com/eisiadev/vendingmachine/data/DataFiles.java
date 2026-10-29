@@ -19,13 +19,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class DataFiles {
 
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     public static final String CURRENCIES_FILE = "currencies.json";
+
     public static final String TRADE_DB_FILE = "tradeDatabase.json";
+
+    public static final String TRADE_DB_DIR = "tradeDatabase";
 
     private DataFiles() {}
 
@@ -46,19 +53,67 @@ public final class DataFiles {
         JsonObject currencyJson = read(currencies);
         CurrencyRegistry.server().readJson(currencyJson == null ? new JsonObject() : currencyJson);
 
-        Path trades = dir.resolve(TRADE_DB_FILE);
-        if (!Files.exists(trades)) writeResource("/defaults/tradeDatabase.json", trades);
-        JsonObject tradeJson = read(trades);
-        boolean rewrite = TradeDatabase.server().readJson(tradeJson == null ? new JsonObject() : tradeJson);
-        if (tradeJson != null && (rewrite || VMConfig.FORCE_REWRITE_DATABASE.get())) {
-            saveTradeDatabase();
+        loadTradeDatabase(dir);
+    }
+
+    private static void loadTradeDatabase(Path dir) {
+        Path tradeDir = dir.resolve(TRADE_DB_DIR);
+        prepareTradeDir(dir, tradeDir);
+
+        TradeDatabase db = TradeDatabase.server();
+        db.clear();
+        boolean force = VMConfig.FORCE_REWRITE_DATABASE.get();
+        List<Path> files = findTradeFiles(tradeDir);
+        for (Path file : files) {
+            JsonObject json = read(file);
+            if (json == null) continue;
+            String source = tradeDir.relativize(file).toString().replace('\\', '/');
+            boolean generated = db.addJson(json, source);
+            if (generated || force) {
+                backup(file, dir.resolve("backup").resolve(TRADE_DB_DIR).resolve(tradeDir.relativize(file)));
+                write(file, json);
+            }
+        }
+        VendingMachine.LOG.info("Scanned {} trade database file(s) in {}", files.size(), tradeDir);
+        db.logSummary();
+    }
+
+    private static void prepareTradeDir(Path dir, Path tradeDir) {
+        if (Files.isDirectory(tradeDir)) return;
+        try {
+            Files.createDirectories(tradeDir);
+        } catch (IOException e) {
+            VendingMachine.LOG.error("Could not create {}", tradeDir, e);
+            return;
+        }
+        Path legacy = dir.resolve(TRADE_DB_FILE);
+        if (Files.exists(legacy)) {
+            try {
+                Files.move(legacy, tradeDir.resolve(TRADE_DB_FILE));
+                VendingMachine.LOG.info("Moved {} into {}", legacy, tradeDir);
+            } catch (IOException e) {
+                VendingMachine.LOG.error("Could not move {} into {}", legacy, tradeDir, e);
+            }
+        } else {
+            writeResource("/defaults/tradeDatabase.json", tradeDir.resolve("default.json"));
         }
     }
 
-    public static void saveTradeDatabase() {
-        Path file = dataDir().resolve(TRADE_DB_FILE);
-        backup(file);
-        write(file, TradeDatabase.server().toJson());
+    private static List<Path> findTradeFiles(Path tradeDir) {
+        if (!Files.isDirectory(tradeDir)) return List.of();
+        try (Stream<Path> walk = Files.walk(tradeDir)) {
+            return walk.filter(Files::isRegularFile)
+                .filter(p -> {
+                    String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+
+                    return name.endsWith(".json") && !name.startsWith("malformed_");
+                })
+                .sorted()
+                .collect(Collectors.toList());
+        } catch (IOException e) {
+            VendingMachine.LOG.error("Could not scan {}", tradeDir, e);
+            return List.of();
+        }
     }
 
     public static JsonObject read(Path file) {
@@ -89,12 +144,11 @@ public final class DataFiles {
         }
     }
 
-    private static void backup(Path file) {
+    private static void backup(Path file, Path target) {
         if (!Files.exists(file)) return;
         try {
-            Path dir = file.getParent().resolve("backup");
-            Files.createDirectories(dir);
-            Files.copy(file, dir.resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+            Files.createDirectories(target.getParent());
+            Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             VendingMachine.LOG.warn("Could not back up {}", file, e);
         }

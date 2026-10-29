@@ -11,10 +11,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 
-/**
- * Green LED panel under the shelf: status lamp on the left, the hovered trade's name, the quantity input
- * ({@link QuantityField}, a separate widget placed at {@link #FIELD_X}) and how many of it can be bought now.
- */
 public class PurchaseDisplay extends VendingWidget<PurchaseDisplay> {
 
     public static final int FIELD_X = 74;
@@ -50,7 +46,6 @@ public class PurchaseDisplay extends VendingWidget<PurchaseDisplay> {
         Gfx.text(g, Component.translatable("vendingmachine.gui.led.max").getString(), FIELD_X + FIELD_W + 4, 4,
             0.5f, Gfx.LED_LABEL, false);
 
-        // Max purchasable for the hovered trade, with unlit "8"s behind it like a real 7-segment display
         float right = w - 6;
         float y = FIELD_Y + 1;
         String ghost = "888,888";

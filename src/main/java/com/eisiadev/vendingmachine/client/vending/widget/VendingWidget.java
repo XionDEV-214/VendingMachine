@@ -9,7 +9,6 @@ import brachy.modularui.widget.Widget;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Base for the vending machine's custom-drawn widgets: draws in local coordinates with the current time. */
 public abstract class VendingWidget<W extends VendingWidget<W>> extends Widget<W> {
 
     protected final VendingView view;

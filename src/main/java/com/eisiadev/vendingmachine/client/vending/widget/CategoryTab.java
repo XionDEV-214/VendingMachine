@@ -15,10 +15,6 @@ import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Vertical tab on the left edge of the panel, one per trade category. Drawn before the panel body so tabs look
- * like they sit behind the machine; the selected one sticks out further. Amber lamp = search matches here.
- */
 public class CategoryTab extends VendingWidget<CategoryTab> implements Interactable {
 
     public static final int W = 30;
@@ -71,7 +67,7 @@ public class CategoryTab extends VendingWidget<CategoryTab> implements Interacta
         }
 
         int iconX = x0 + (w - 3 - x0 - 20) / 2 + 2;
-        g.flush(); // rects are batched; flush so they don't end up painted over the icon
+        g.flush();
         icon.draw(context, iconX, (h - 16) / 2, 20, 16);
         if (empty()) Gfx.rect(g, x0 + 1, 1, w - x0 - 1, h - 2, 0x99101418);
 

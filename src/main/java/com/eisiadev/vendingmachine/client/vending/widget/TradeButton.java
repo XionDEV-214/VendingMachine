@@ -17,10 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * One trade on the shelf, as a tile (grid) or a row (list). Shift-click buys the selected quantity,
- * Ctrl-click toggles favourite. The bottom lamp says whether that quantity can be bought right now.
- */
 public class TradeButton extends VendingWidget<TradeButton> implements Interactable {
 
     public static final int TILE_WIDTH = 47;
@@ -85,7 +81,6 @@ public class TradeButton extends VendingWidget<TradeButton> implements Interacta
         else renderRow(context, g, w, h, d);
     }
 
-    /** Lamp colour: green = buyable in the selected quantity, amber = buyable but not that many, red = no. */
     private int lamp(TradeDisplay d) {
         if (view.canBuy(d)) return Gfx.LED_ON;
         if (d.tradeableNow && d.maxQuantity > 0) return Gfx.AMBER;
@@ -105,22 +100,18 @@ public class TradeButton extends VendingWidget<TradeButton> implements Interacta
         }
         int dy = pressed ? 1 : 0;
 
-        // Count, scaled down to fit when it gets long
         String count = String.valueOf(d.display.getCount());
         float scale = Math.min(1f, 19f / Math.max(1, Gfx.width(count)));
         Gfx.text(g, count, 4, (h - 8 * scale) / 2f - 1 + dy, scale, Gfx.TEXT, true);
 
-        // Item in a small recess
-        Gfx.well(g, 25, 3 + dy, 18, 18);
+        Gfx.well(g, 26, 4 + dy, 18, 18);
         g.flush();
         GuiDraw.drawItem(g, single(d.display), 26, 4 + dy, 16, 16, context.getCurrentDrawingZ());
 
-        // Status lamp along the bottom
         int lamp = lamp(d);
         Gfx.rect(g, 3, h - 3, 19, 1, lamp);
         if (!blocked && view.canBuy(d)) Gfx.glow(g, 3, h - 3, 19, 1, lamp, 40);
 
-        // Overlays go above the item
         g.pose().pushPose();
         g.pose().translate(0, 0, 200);
         if (d.tgID.equals(view.hoveredGroup())) Gfx.outline(g, 0, 0, w, h, Gfx.CYAN);
@@ -162,7 +153,6 @@ public class TradeButton extends VendingWidget<TradeButton> implements Interacta
         String name = Gfx.fit(d.display.getHoverName().getString(), right - 36, 0.9f);
         Gfx.text(g, name, 36, (h - 7) / 2f, 0.9f, blocked ? Gfx.DIM : Gfx.TEXT, false);
 
-        // Overlays go above the item
         g.pose().pushPose();
         g.pose().translate(0, 0, 200);
         if (blocked) Gfx.rect(g, 2, 0, w - 2, h - 1, 0x90000000);
